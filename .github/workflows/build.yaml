@@ -104,7 +104,7 @@ jobs:
         env:
           ARCHIVE_FILE: komga-${{ matrix.target }}-${{inputs.version}}.tar.gz
         run: |
-          cp target/${{ matrix.target }}/release/komga $DIST_DIR
+          cp target/${{ matrix.target }}/release/pkomga $DIST_DIR
           tar -zcvf $ARCHIVE_FILE $DIST_DIR
           shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
           echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
@@ -114,7 +114,7 @@ jobs:
         env:
           ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{inputs.version}}.zip
         run: |
-          cp target/${{ matrix.target }}/release/komga $DIST_DIR
+          cp target/${{ matrix.target }}/release/pkomga $DIST_DIR
           zip -9r $ARCHIVE_FILE $DIST_DIR
           shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
           echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
@@ -124,7 +124,7 @@ jobs:
         env:
           ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{inputs.version}}.zip
         run: |
-          cp target/${{ matrix.target }}/release/komga.exe $DIST_DIR
+          cp target/${{ matrix.target }}/release/pkomga.exe $DIST_DIR
           7z a -tzip $ARCHIVE_FILE $DIST_DIR
           echo ${{ hashFiles(env.ARCHIVE_FILE) }} > $ARCHIVE_FILE-sha256sum.txt
           echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
