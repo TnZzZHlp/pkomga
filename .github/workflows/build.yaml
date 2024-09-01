@@ -29,7 +29,7 @@ jobs:
             os: windows-2019
             rust: stable-x86_64-msvc
             target: x86_64-pc-windows-msvc
-            archive-name: pkomga-windows.7z
+            archive-name: pkomga-windows.tar.gz
       fail-fast: false
 
     steps:
@@ -75,6 +75,5 @@ jobs:
           tag_name: ${{ inputs.version }}
           files: |
             ${{ env.archive_file }} 
-            ${{ env.archive_file }}-sha256sum.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
