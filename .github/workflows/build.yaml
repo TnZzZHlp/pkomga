@@ -89,7 +89,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Build
-        run: just build --release --no-default-features --target=${{ matrix.target }}
+        run: cargo b --release --target=${{ matrix.target }}
         env:
           USE_CROSS: ${{ matrix.os == 'ubuntu-latest' }}
 
