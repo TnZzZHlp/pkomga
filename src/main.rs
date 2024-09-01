@@ -36,7 +36,7 @@ async fn main() {
     // Init progress bar
     let pb = Arc::new(MultiProgress::new());
 
-    // insert_bgm(&config, komga.clone(), bgm.clone(), pb.clone()).await;
+    insert_bgm(&config, komga.clone(), bgm.clone(), pb.clone()).await;
     parse_metadata(&config, komga, bgm, pb.clone()).await;
 
     let _ = pb.clear();
@@ -131,11 +131,11 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
         let limit = limit.clone();
         let bgm = bgm.clone();
 
-        // // 判断是否已经挂削过
-        // if s.metadata.tags.iter().any(|tag| tag == "已挂削") {
-        //     metadata_pb.inc(1);
-        //     continue;
-        // }
+        // 判断是否已经挂削过
+        if s.metadata.tags.iter().any(|tag| tag == "已挂削") {
+            metadata_pb.inc(1);
+            continue;
+        }
 
         // 判断是否已经存在Bangumi链接
         if !s.metadata.links.iter().any(|link| link.label == "Bangumi") {
