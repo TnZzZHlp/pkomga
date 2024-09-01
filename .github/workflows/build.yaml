@@ -1,151 +1,75 @@
-# .github/workflows/build.yml
-name: Build
-
+name: build
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       version:
         type: string
         required: false
-      features:
-        type: string
-        required: false
         default: default
         description: Space or comma separated list of features to activate
-
-  workflow_dispatch:
-
-
 jobs:
   build:
-    name: build ${{ matrix.target }} ${{ inputs.version }}
+    name: build
+    runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
+        build: [linux, macos, windows]
         include:
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            archive: zip
-          - target: x86_64-pc-windows-gnu
-            os: windows-latest
-            archive: zip
-          - target: aarch64-pc-windows-msvc
-            os: windows-latest
-            archive: zip
-          - target: i686-pc-windows-msvc
-            os: windows-latest
-            archive: zip
-          # - target: i686-pc-windows-gnu  # error: linker `i686-w64-mingw32-gcc` not found
-          #   os: windows-latest
-          #   archive: zip
-          - target: x86_64-apple-darwin
+          - build: linux
+            os: ubuntu-18.04
+            rust: stable
+            target: x86_64-unknown-linux-musl
+            archive-name: pkomga-linux.tar.gz
+          - build: macos
             os: macos-latest
-            archive: zip
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            archive: zip
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            archive: tar.gz tar.xz tar.zst
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
-            archive: tar.gz tar.xz tar.zst
-          # - target: arch64-unknown-linux-musl
-          #   archive: tar.gz tar.xz tar.zst
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-            archive: tar.gz tar.xz tar.zst
-        #   - target: x86_64-unknown-linux-gnu
-        #     os: ubuntu-latest
-        #     archive: tar.gz tar.xz tar.zst
-        #   - target: arm-unknown-linux-musleabi
-        #     os: ubuntu-latest
-        #     archive: tar.gz tar.xz tar.zst
-        #   - target: arm-unknown-linux-musleabihf
-        #     os: ubuntu-latest
-        #     archive: tar.gz tar.xz tar.zst
-          # - target: mips-unknown-linux-musl
-          #   archive: tar.gz tar.xz tar.zst
-          # - target: mips-unknown-linux-musl
-          #   archive: tar.gz tar.xz tar.zst
-          # - target: mips64-unknown-linux-muslabi64
-          #   archive: tar.gz tar.xz tar.zst
-        #   - target: aarch64-linux-android
-        #     os: ubuntu-latest
-        #     archive: tar.gz tar.xz tar.zst
-          # - target: x86_64-unknown-freebsd
-          #   os: ubuntu-latest
-          #   archive: tar.gz tar.xz tar.zst
-          # - target: x86_64-unknown-netbsd
-          #   os: ubuntu-latest
-          #   archive: tar.gz tar.xz tar.zst
-          # - target: wasm32-unknown-emscripten
-          #   archive: tar.gz tar.xz tar.zst
+            rust: stable
+            target: x86_64-apple-darwin
+            archive-name: pkomga-macos.tar.gz
+          - build: windows
+            os: windows-2019
+            rust: stable-x86_64-msvc
+            target: x86_64-pc-windows-msvc
+            archive-name: pkomga-windows.7z
+      fail-fast: false
 
-    runs-on: ${{matrix.os}}
-    env:
-      DIST_DIR: pkomga-${{ matrix.target }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
         with:
-          ref: ${{ inputs.version }}
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+          target: ${{ matrix.target }}
 
-      - name: Setup
-        uses: /Users/runner/work/pkomga/.github/actions/setup
-
-      - name: Build
-        run: just build --release --no-default-features --target=${{ matrix.target }}
+      - name: Build binary
+        run: cargo build --verbose --release --target ${{ matrix.target }}
         env:
-          USE_CROSS: ${{ matrix.os == 'ubuntu-latest' }}
+          RUST_BACKTRACE: 1
 
-      - name: Prepare package
-        run: |
-          mkdir $DIST_DIR
-          cp config.json $DIST_DIR
+      - name: Strip binary (linux and macos)
+        if: matrix.build == 'linux' || matrix.build == 'macos'
+        run: strip "target/${{ matrix.target }}/release/pkomga"
+
+      - name: Build archive
         shell: bash
-          
-      - name: Publish archive
-        if: ${{ !contains(matrix.target, 'windows') && !contains(matrix.target, 'darwin') }}
         env:
-          ARCHIVE_FILE: pkomga-${{ matrix.target }}-${{inputs.version}}.tar.gz
+          ARCHIVE_FILE: pkomga-${{ matrix.target }}.tar.gz
         run: |
-          cp target/${{ matrix.target }}/release/pkomga $DIST_DIR
-          tar -zcvf $ARCHIVE_FILE $DIST_DIR
-          shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
-          echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
+          mkdir archive
+          cd archive
+          if [ "${{ matrix.build }}" = "windows" ]; then
+            cp "../target/${{ matrix.target }}/release/pkomga.exe" ./
+            tar -czf "${{ matrix.archive-name }}" pkomga.exe
+          else
+            cp "../target/${{ matrix.target }}/release/pkomga" ./
+            tar -czf "${{ matrix.archive-name }}" pkomga
+          fi
 
-      - name: Publish zip archive macos
-        if: ${{ contains(matrix.target, 'darwin') }}
-        env:
-          ARCHIVE_FILE: pkomga-${{ matrix.target }}-${{inputs.version}}.zip
-        run: |
-          cp target/${{ matrix.target }}/release/pkomga $DIST_DIR
-          zip -9r $ARCHIVE_FILE $DIST_DIR
-          shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
-          echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
-      
-      - name: Publish zip archive windows
-        if: ${{ contains(matrix.target, 'windows') }}
-        env:
-          ARCHIVE_FILE: pkomga-${{ matrix.target }}-${{inputs.version}}.zip
-        run: |
-          cp target/${{ matrix.target }}/release/pkomga.exe $DIST_DIR
-          7z a -tzip $ARCHIVE_FILE $DIST_DIR
-          echo ${{ hashFiles(env.ARCHIVE_FILE) }} > $ARCHIVE_FILE-sha256sum.txt
-          echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
-        shell: bash
-    
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pkomga-${{ matrix.target }}-${{ inputs.version }}
-          retention-days: 30
-          path: ${{ env.archive_file }}  
-      
       - name: Publish release
         uses: softprops/action-gh-release@v2.0.6
-        if: ${{ startsWith(inputs.version, 'v') }}
         with:
           draft: false
           tag_name: ${{ inputs.version }}
