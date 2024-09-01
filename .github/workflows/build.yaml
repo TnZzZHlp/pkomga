@@ -102,7 +102,7 @@ jobs:
       - name: Publish archive
         if: ${{ !contains(matrix.target, 'windows') && !contains(matrix.target, 'darwin') }}
         env:
-          ARCHIVE_FILE: komga-${{ matrix.target }}-${{inputs.version}}.tar.gz
+          ARCHIVE_FILE: pkomga-${{ matrix.target }}-${{inputs.version}}.tar.gz
         run: |
           cp target/${{ matrix.target }}/release/pkomga $DIST_DIR
           tar -zcvf $ARCHIVE_FILE $DIST_DIR
@@ -112,7 +112,7 @@ jobs:
       - name: Publish zip archive macos
         if: ${{ contains(matrix.target, 'darwin') }}
         env:
-          ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{inputs.version}}.zip
+          ARCHIVE_FILE: pkomga-${{ matrix.target }}-${{inputs.version}}.zip
         run: |
           cp target/${{ matrix.target }}/release/pkomga $DIST_DIR
           zip -9r $ARCHIVE_FILE $DIST_DIR
