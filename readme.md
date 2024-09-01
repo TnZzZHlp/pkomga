@@ -1,3 +1,6 @@
+### 效果图如下
+![alt text](img/image-1.png)
+
 ### 用法
 
 Bgm Token 申请 https://next.bgm.tv/demo/access-token
