@@ -14,12 +14,6 @@ on:
         description: Space or comma separated list of features to activate
 
   workflow_dispatch:
-    inputs:
-      features:
-        type: string
-        required: false
-        default: default
-        description: Space or comma separated list of features to activate
 
 
 jobs:
@@ -101,7 +95,7 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Build
-        run: just build --release --no-default-features --features ${{ inputs.features }} --target=${{ matrix.target }}
+        run: just build --release --no-default-features --target=${{ matrix.target }}
         env:
           USE_CROSS: ${{ matrix.os == 'ubuntu-latest' }}
 
