@@ -1,6 +1,3 @@
-use std::io::copy;
-
-use base64::prelude::*;
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -40,13 +37,13 @@ pub struct Metadata {
     pub alternate_titles: Vec<AlternateTitle>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AlternateTitle {
     pub label: String,
     pub title: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Link {
     pub label: String,
     pub url: String,
