@@ -202,6 +202,7 @@ impl Komga {
         {
             Ok(res) => match res.json::<Vec<Img>>().await {
                 Ok(imgs) => {
+                    // 删除原有封面
                     for img in imgs {
                         reqwest::Client::new()
                             .delete(&format!(

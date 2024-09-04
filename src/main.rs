@@ -81,6 +81,12 @@ async fn insert_bgm(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: Arc<M
             continue;
         }
 
+        // 判断是否已经挂削过
+        if s.metadata.tags.iter().any(|tag| tag == "已挂削") {
+            insert_pb.inc(1);
+            continue;
+        }
+
         tasks.spawn(async move {
             let _permit = limit.acquire().await.unwrap();
             insert_pb.set_message(format!("Inserting Bangumi Url into {}", s.name));
