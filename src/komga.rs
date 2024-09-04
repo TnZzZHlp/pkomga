@@ -74,7 +74,7 @@ impl Komga {
     pub async fn get_all_libraries(&self) -> Vec<Libraries> {
         reqwest::Client::new()
             .get(&format!("{}/api/v1/libraries?size=100000", self.url))
-            .basic_auth(self.user.clone(), Some(self.password.clone()))
+            .basic_auth(&self.user, Some(&self.password))
             .send()
             .await
             .expect("Failed to get libraries")
@@ -90,7 +90,7 @@ impl Komga {
         }
         reqwest::Client::new()
             .get(&format!("{}/api/v1/series?size=100000", self.url))
-            .basic_auth(self.user.clone(), Some(self.password.clone()))
+            .basic_auth(&self.user, Some(&self.password))
             .send()
             .await
             .expect("Failed to get series")
@@ -114,7 +114,7 @@ impl Komga {
                         "{}/api/v1/series?library_id={}&size=100000",
                         self.url, library_id
                     ))
-                    .basic_auth(self.user.clone(), Some(self.password.clone()))
+                    .basic_auth(&self.user, Some(&self.password))
                     .send()
                     .await
                     .expect("Failed to get series")
@@ -136,7 +136,7 @@ impl Komga {
         // 判断是否已经存在Bangumi链接
         match reqwest::Client::new()
             .get(&format!("{}/api/v1/series/{}", self.url, series_id))
-            .basic_auth(self.user.clone(), Some(self.password.clone()))
+            .basic_auth(&self.user, Some(&self.password))
             .send()
             .await
             .expect("Failed to get series")
@@ -163,7 +163,7 @@ impl Komga {
                 "{}/api/v1/series/{}/metadata",
                 self.url, series_id
             ))
-            .basic_auth(self.user.clone(), Some(self.password.clone()))
+            .basic_auth(&self.user, Some(&self.password))
             .json(&json!({
                 "links": [
                     {
@@ -180,7 +180,7 @@ impl Komga {
     pub async fn update_metadata(&self, id: &str, metadata: Metadata) {
         reqwest::Client::new()
             .patch(&format!("{}/api/v1/series/{}/metadata", self.url, id))
-            .basic_auth(self.user.clone(), Some(self.password.clone()))
+            .basic_auth(&self.user, Some(&self.password))
             .json(&metadata)
             .send()
             .await
@@ -189,30 +189,34 @@ impl Komga {
 
     pub async fn update_cover(&self, id: &str, img: String) {
         #[derive(Deserialize)]
-        struct img {
+        struct Img {
             id: String,
         }
 
         // 判断是否已经存在封面
         match reqwest::Client::new()
             .get(&format!("{}/api/v1/series/{}/thumbnails", self.url, id))
-            .basic_auth(self.user.clone(), Some(self.password.clone()))
+            .basic_auth(&self.user, Some(&self.password))
             .send()
             .await
         {
-            Ok(res) => match res.json::<Vec<img>>().await {
+            Ok(res) => match res.json::<Vec<Img>>().await {
                 Ok(imgs) => {
-                    if imgs.len() > 0 {
-                        return;
+                    for img in imgs {
+                        reqwest::Client::new()
+                            .delete(&format!(
+                                "{}/api/v1/series/{}/thumbnails/{}",
+                                self.url, id, img.id
+                            ))
+                            .basic_auth(&self.user, Some(&self.password))
+                            .send()
+                            .await
+                            .expect("Failed to delete cover");
                     }
                 }
-                Err(_) => {
-                    return;
-                }
+                Err(_) => {}
             },
-            Err(_) => {
-                return;
-            }
+            Err(_) => {}
         }
 
         // 下载图片
@@ -247,7 +251,7 @@ impl Komga {
         // 上传图片
         reqwest::Client::new()
             .post(&format!("{}/api/v1/series/{}/thumbnails", self.url, id))
-            .basic_auth(self.user.clone(), Some(self.password.clone()))
+            .basic_auth(&self.user, Some(&self.password))
             .multipart(form)
             .send()
             .await
