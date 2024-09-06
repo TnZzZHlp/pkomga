@@ -9,6 +9,8 @@ pub struct Komga {
     pub url: String,
     pub user: String,
     pub password: String,
+    #[serde(skip)]
+    pub client: reqwest::Client,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -68,11 +70,12 @@ impl Komga {
             url: config.komga_url.clone(),
             user: config.komga_username.clone(),
             password: config.komga_password.clone(),
+            client: reqwest::Client::new(),
         }
     }
 
     pub async fn get_all_libraries(&self) -> Vec<Libraries> {
-        reqwest::Client::new()
+        self.client
             .get(&format!("{}/api/v1/libraries?size=100000", self.url))
             .basic_auth(&self.user, Some(&self.password))
             .send()
@@ -88,7 +91,7 @@ impl Komga {
         struct Response {
             content: Vec<Series>,
         }
-        reqwest::Client::new()
+        self.client
             .get(&format!("{}/api/v1/series?size=100000", self.url))
             .basic_auth(&self.user, Some(&self.password))
             .send()
@@ -109,7 +112,7 @@ impl Komga {
         let mut series: Vec<Series> = Vec::new();
         for library_id in library_ids {
             series.append(
-                &mut reqwest::Client::new()
+                &mut self.client
                     .get(&format!(
                         "{}/api/v1/series?library_id={}&size=100000",
                         self.url, library_id
@@ -134,7 +137,7 @@ impl Komga {
         }
 
         // 判断是否已经存在Bangumi链接
-        match reqwest::Client::new()
+        match self.client
             .get(&format!("{}/api/v1/series/{}", self.url, series_id))
             .basic_auth(&self.user, Some(&self.password))
             .send()
@@ -158,7 +161,7 @@ impl Komga {
             }
         };
 
-        reqwest::Client::new()
+        self.client
             .patch(&format!(
                 "{}/api/v1/series/{}/metadata",
                 self.url, series_id
@@ -178,7 +181,7 @@ impl Komga {
     }
 
     pub async fn update_metadata(&self, id: &str, metadata: Metadata) {
-        reqwest::Client::new()
+        self.client
             .patch(&format!("{}/api/v1/series/{}/metadata", self.url, id))
             .basic_auth(&self.user, Some(&self.password))
             .json(&metadata)
@@ -194,7 +197,7 @@ impl Komga {
         }
 
         // 判断是否已经存在封面
-        match reqwest::Client::new()
+        match self.client
             .get(&format!("{}/api/v1/series/{}/thumbnails", self.url, id))
             .basic_auth(&self.user, Some(&self.password))
             .send()
@@ -204,7 +207,7 @@ impl Komga {
                 Ok(imgs) => {
                     // 删除原有封面
                     for img in imgs {
-                        reqwest::Client::new()
+                        self.client
                             .delete(&format!(
                                 "{}/api/v1/series/{}/thumbnails/{}",
                                 self.url, id, img.id
@@ -221,7 +224,7 @@ impl Komga {
         }
 
         // 下载图片
-        let img = match reqwest::Client::new().get(&img).send().await {
+        let img = match self.client.get(&img).send().await {
             Ok(res) => match res.bytes().await {
                 Ok(img) => img,
                 Err(_) => {
@@ -250,7 +253,7 @@ impl Komga {
             .part("selected", Part::text("true"));
 
         // 上传图片
-        reqwest::Client::new()
+        self.client
             .post(&format!("{}/api/v1/series/{}/thumbnails", self.url, id))
             .basic_auth(&self.user, Some(&self.password))
             .multipart(form)
