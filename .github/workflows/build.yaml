@@ -122,7 +122,7 @@ jobs:
       - name: Publish zip archive windows
         if: ${{ contains(matrix.target, 'windows') }}
         env:
-          ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{inputs.version}}.zip
+          ARCHIVE_FILE: pkomga-${{ matrix.target }}-${{inputs.version}}.zip
         run: |
           cp target/${{ matrix.target }}/release/pkomga.exe $DIST_DIR
           7z a -tzip $ARCHIVE_FILE $DIST_DIR
