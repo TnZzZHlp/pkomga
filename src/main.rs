@@ -81,6 +81,12 @@ async fn insert_bgm(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: Arc<M
             continue;
         }
 
+        // 判断是否已经挂削过
+        if s.metadata.tags.iter().any(|tag| tag == "已挂削") {
+            insert_pb.inc(1);
+            continue;
+        }
+
         tasks.spawn(async move {
             let _permit = limit.acquire().await.unwrap();
             insert_pb.set_message(format!("Inserting Bangumi Url into {}", s.name));
@@ -122,7 +128,7 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
 
     let limit = Arc::new(tokio::sync::Semaphore::new(3));
 
-    // Parse MeteData
+    // 解析元数据
     let mut tasks = JoinSet::new();
     for s in series {
         let komga = komga.clone();
@@ -132,13 +138,19 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
         let bgm = bgm.clone();
 
         // 判断是否已经挂削过
-        if s.metadata.tags.iter().any(|tag| tag == "已挂削") {
+        if s.clone().metadata.tags.iter().any(|tag| tag == "已挂削") {
             metadata_pb.inc(1);
             continue;
         }
 
         // 判断是否已经存在Bangumi链接
-        if !s.metadata.links.iter().any(|link| link.label == "Bangumi") {
+        if !s
+            .clone()
+            .metadata
+            .links
+            .iter()
+            .any(|link| link.label == "Bangumi")
+        {
             metadata_pb.inc(1);
             continue;
         }
@@ -158,8 +170,14 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
             info_pb.enable_steady_tick(Duration::from_millis(100));
 
             // 通过Bangumi链接获取Bangumi ID
-            let links = s.metadata.links.clone();
-            let bgmid = match s.metadata.links.into_iter().find(|i| i.label == "Bangumi") {
+            let links = s.clone().metadata.links.clone();
+            let bgmid = match s
+                .clone()
+                .metadata
+                .links
+                .into_iter()
+                .find(|i| i.label == "Bangumi")
+            {
                 Some(link) => match link.url.split("/").last() {
                     Some(id) => id.to_string(),
                     None => {

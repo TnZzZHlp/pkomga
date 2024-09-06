@@ -76,7 +76,7 @@ jobs:
 
     runs-on: ${{matrix.os}}
     env:
-      DIST_DIR: komga-${{ matrix.target }}
+      DIST_DIR: pkomga-${{ matrix.target }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

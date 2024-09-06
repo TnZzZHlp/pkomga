@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 use crate::{
     config::Config,
@@ -154,6 +151,11 @@ impl Bgm {
                     });
                 }
                 metadata.alternate_titles = alternate_titles;
+
+                // File::create("metadata.json")
+                //     .unwrap()
+                //     .write_all(json!(metadata).to_string().as_bytes())
+                //     .unwrap();
 
                 Ok((metadata, res.images.large))
             }
