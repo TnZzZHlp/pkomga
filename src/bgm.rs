@@ -7,6 +7,7 @@ use crate::{
 
 pub struct Bgm {
     api_key: String,
+    client: reqwest::Client,
 }
 
 #[derive(Deserialize, Debug)]
@@ -49,6 +50,7 @@ impl Bgm {
     pub fn new(config: &Config) -> Bgm {
         Bgm {
             api_key: config.bgm_key.clone(),
+            client: reqwest::Client::new(),
         }
     }
 
@@ -65,7 +67,7 @@ impl Bgm {
             name_cn: String,
         }
 
-        let res = match reqwest::Client::new()
+        let res = match self.client
             .get(format!(
                 "https://api.bgm.tv/search/subject/\"{}\"?type=1",
                 name
@@ -92,7 +94,7 @@ impl Bgm {
     }
 
     pub async fn get_subject(&self, id: &str) -> Result<(Metadata, String), ()> {
-        let res = match reqwest::Client::new()
+        let res = match self.client
             .get(&format!("https://api.bgm.tv/v0/subjects/{}", id))
             .header("Authorization", "Bearer ".to_owned() + &self.api_key)
             .header("User-Agent", "TnZzZHlp/rkomga")
@@ -151,11 +153,6 @@ impl Bgm {
                     });
                 }
                 metadata.alternate_titles = alternate_titles;
-
-                // File::create("metadata.json")
-                //     .unwrap()
-                //     .write_all(json!(metadata).to_string().as_bytes())
-                //     .unwrap();
 
                 Ok((metadata, res.images.large))
             }
