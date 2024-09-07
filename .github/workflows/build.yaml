@@ -106,7 +106,7 @@ jobs:
         run: |
           cp target/${{ matrix.target }}/release/pkomga $DIST_DIR
           tar -zcvf $ARCHIVE_FILE $DIST_DIR
-          shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
+          # shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
           echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
 
       - name: Publish zip archive macos
@@ -116,24 +116,24 @@ jobs:
         run: |
           cp target/${{ matrix.target }}/release/pkomga $DIST_DIR
           zip -9r $ARCHIVE_FILE $DIST_DIR
-          shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
+          # shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
           echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
       
       - name: Publish zip archive windows
         if: ${{ contains(matrix.target, 'windows') }}
         env:
-          ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{inputs.version}}.zip
+          ARCHIVE_FILE: pkomga-${{ matrix.target }}-${{inputs.version}}.zip
         run: |
           cp target/${{ matrix.target }}/release/pkomga.exe $DIST_DIR
           7z a -tzip $ARCHIVE_FILE $DIST_DIR
-          echo ${{ hashFiles(env.ARCHIVE_FILE) }} > $ARCHIVE_FILE-sha256sum.txt
+          # echo ${{ hashFiles(env.ARCHIVE_FILE) }} > $ARCHIVE_FILE-sha256sum.txt
           echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
         shell: bash
     
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: komga-${{ matrix.target }}-${{ inputs.version }}
+          name: pkomga-${{ matrix.target }}-${{ inputs.version }}
           retention-days: 30
           path: ${{ env.archive_file }}  
       
@@ -144,6 +144,6 @@ jobs:
           tag_name: ${{ inputs.version }}
           files: |
             ${{ env.archive_file }} 
-            ${{ env.archive_file }}-sha256sum.txt
+            # ${{ env.archive_file }}-sha256sum.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
