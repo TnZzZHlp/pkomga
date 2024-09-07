@@ -8,3 +8,8 @@ runs:
       with:
         toolchain: stable
         target: ${{ matrix.target }}
+        
+    - name: Install cross
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cross
