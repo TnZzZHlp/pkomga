@@ -9,10 +9,10 @@ use komga::Komga;
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use lazy_static::lazy_static;
 use serde::de;
+use std::{env, fmt, sync::Arc, time::Duration};
+use tokio::task::JoinSet;
 use tracing::{debug, Level};
 use tracing_subscriber::FmtSubscriber;
-use std::{fmt, sync::Arc, time::Duration};
-use tokio::task::JoinSet;
 
 lazy_static! {
     static ref STY: ProgressStyle = ProgressStyle::with_template(
@@ -29,7 +29,11 @@ lazy_static! {
 async fn main() {
     // 初始化日志
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::DEBUG)
+        .with_max_level(if env::args().any(|f| f == "-v") {
+            Level::DEBUG
+        } else {
+            Level::ERROR
+        })
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("初始化日志失败");
 
