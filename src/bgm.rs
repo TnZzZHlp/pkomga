@@ -97,25 +97,31 @@ impl Bgm {
     }
 
     pub async fn get_subject(&self, id: &str) -> Result<(Metadata, String), ()> {
-        debug!("条目url: {}", &format!("https://api.bgm.tv/v0/subjects/{}", id));
+        debug!(
+            "条目url: {}",
+            &format!("https://api.bgm.tv/v0/subjects/{}", id)
+        );
         let res = match self
             .client
             .get(&format!("https://api.bgm.tv/v0/subjects/{}", id))
             .header("Authorization", "Bearer ".to_owned() + &self.api_key)
-            .header("User-Agent", "TnZzZHlp/pkomga/1.0.1 (https://github.com/TnZzZHlp/pkomga)")
+            .header(
+                "User-Agent",
+                "TnZzZHlp/pkomga/1.0.1 (https://github.com/TnZzZHlp/pkomga)",
+            )
             .send()
             .await
         {
-            Ok(res) =>{ 
-                let res = res.text().await;
-                debug!("{:?}", res);
-                serde_json::from_str::<Subject>(&res.unwrap())
-            },
+            Ok(res) => res,
             Err(e) => {
                 error!("Failed to get subject: {}", e);
                 return Err(());
             }
         };
+
+        let res = res.text().await;
+        debug!("{:?}", res);
+        let res = serde_json::from_str::<Subject>(&res.unwrap());
 
         match res {
             Ok(res) => {
