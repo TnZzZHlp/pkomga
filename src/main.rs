@@ -8,6 +8,8 @@ use komga::Komga;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use lazy_static::lazy_static;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 use std::{fmt, sync::Arc, time::Duration};
 use tokio::task::JoinSet;
 
@@ -24,16 +26,22 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
-    // Parse config
+    // 初始化日志
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::DEBUG)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("初始化日志失败");
+
+    // 解析配置
     let config = Config::parse();
 
-    // Init Komga
+    // 初始化Komga
     let komga = Arc::new(Komga::new(&config));
 
-    // Init BGM
+    // 初始化Bangumi
     let bgm = Arc::new(Bgm::new(&config));
 
-    // Init progress bar
+    // 初始化进度条
     let pb = Arc::new(MultiProgress::new());
 
     insert_bgm(&config, komga.clone(), bgm.clone(), pb.clone()).await;
