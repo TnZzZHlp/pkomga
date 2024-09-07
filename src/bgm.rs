@@ -101,7 +101,7 @@ impl Bgm {
             .client
             .get(&format!("https://api.bgm.tv/v0/subjects/{}", id))
             .header("Authorization", "Bearer ".to_owned() + &self.api_key)
-            .header("User-Agent", "TnZzZHlp/rkomga")
+            .header("User-Agent", "TnZzZHlp/pkomga")
             .send()
             .await
         {
