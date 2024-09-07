@@ -1,4 +1,6 @@
+use tracing::error;
 use serde::{Deserialize, Serialize};
+use tracing::debug;
 
 use crate::{
     config::Config,
@@ -103,7 +105,7 @@ impl Bgm {
         {
             Ok(res) => res.json::<Subject>().await,
             Err(e) => {
-                eprintln!("Failed to get subject: {}", e);
+                error!("Failed to get subject: {}", e);
                 return Err(());
             }
         };
@@ -157,7 +159,7 @@ impl Bgm {
                 Ok((metadata, res.images.large))
             }
             Err(e) => {
-                eprintln!("Failed to parse subject: {}", e);
+                error!("Failed to parse subject: {}", e);
                 Err(())
             }
         }
