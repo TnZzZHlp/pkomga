@@ -97,7 +97,7 @@ impl Bgm {
     }
 
     pub async fn get_subject(&self, id: &str) -> Result<(Metadata, String), ()> {
-        debug!("id: {:?}", id);
+        debug!("条目url: {}", &format!("https://api.bgm.tv/v0/subjects/{}", id));
         let res = match self
             .client
             .get(&format!("https://api.bgm.tv/v0/subjects/{}", id))
@@ -108,7 +108,7 @@ impl Bgm {
         {
             Ok(res) =>{ 
                 let res = res.text().await;
-                debug!("res: {:?}", res);
+                debug!("{:?}", res);
                 serde_json::from_str::<Subject>(&res.unwrap())
             },
             Err(e) => {
