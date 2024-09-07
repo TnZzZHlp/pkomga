@@ -38,8 +38,6 @@ async fn main() {
 
     insert_bgm(&config, komga.clone(), bgm.clone(), pb.clone()).await;
     parse_metadata(&config, komga, bgm, pb.clone()).await;
-
-    let _ = pb.clear();
 }
 
 async fn insert_bgm(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: Arc<MultiProgress>) {
@@ -103,6 +101,7 @@ async fn insert_bgm(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: Arc<M
     }
 
     tasks.join_all().await;
+    insert_pb.finish_with_message("Insert Bangumi Url Done");
 }
 
 async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: Arc<MultiProgress>) {
@@ -214,6 +213,5 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
     }
 
     tasks.join_all().await;
-
-    pb.remove(&metadata_pb);
+    metadata_pb.finish_with_message("Parse Metadata Done");
 }
