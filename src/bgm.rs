@@ -97,6 +97,7 @@ impl Bgm {
     }
 
     pub async fn get_subject(&self, id: &str) -> Result<(Metadata, String), ()> {
+        debug!("id: {:?}", id);
         let res = match self
             .client
             .get(&format!("https://api.bgm.tv/v0/subjects/{}", id))
