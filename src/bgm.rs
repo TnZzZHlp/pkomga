@@ -1,6 +1,6 @@
-use tracing::error;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
+use tracing::error;
 
 use crate::{
     config::Config,
@@ -69,7 +69,8 @@ impl Bgm {
             name_cn: String,
         }
 
-        let res = match self.client
+        let res = match self
+            .client
             .get(format!(
                 "https://api.bgm.tv/search/subject/\"{}\"?type=1",
                 name
@@ -96,14 +97,19 @@ impl Bgm {
     }
 
     pub async fn get_subject(&self, id: &str) -> Result<(Metadata, String), ()> {
-        let res = match self.client
+        let res = match self
+            .client
             .get(&format!("https://api.bgm.tv/v0/subjects/{}", id))
             .header("Authorization", "Bearer ".to_owned() + &self.api_key)
             .header("User-Agent", "TnZzZHlp/rkomga")
             .send()
             .await
         {
-            Ok(res) => res.json::<Subject>().await,
+            Ok(res) =>{ 
+                let res = res.text().await;
+                debug!("res: {:?}", res);
+                serde_json::from_str::<Subject>(&res.unwrap())
+            },
             Err(e) => {
                 error!("Failed to get subject: {}", e);
                 return Err(());
