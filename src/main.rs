@@ -8,7 +8,8 @@ use komga::Komga;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use lazy_static::lazy_static;
-use tracing::Level;
+use serde::de;
+use tracing::{debug, Level};
 use tracing_subscriber::FmtSubscriber;
 use std::{fmt, sync::Arc, time::Duration};
 use tokio::task::JoinSet;
@@ -188,12 +189,14 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
                 Some(link) => match link.url.split("/").last() {
                     Some(id) => id.to_string(),
                     None => {
+                        debug!("url格式错误 : {}", link.url);
                         info_pb.finish_and_clear();
                         metadata_pb.inc(1);
                         return;
                     }
                 },
                 None => {
+                    debug!("未找到Bangumi链接");
                     info_pb.finish_and_clear();
                     metadata_pb.inc(1);
                     return;
@@ -206,6 +209,7 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
                     (metadata, img)
                 }
                 Err(_) => {
+                    debug!("获取Bangumi信息失败");
                     info_pb.finish_and_clear();
                     metadata_pb.inc(1);
                     return;
