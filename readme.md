@@ -1,3 +1,5 @@
+## 为Komga添加Bangumi元数据
+
 ### 效果图如下
 ![alt text](img/image-1.png)
 
@@ -6,6 +8,14 @@
 Bgm Token 申请 https://next.bgm.tv/demo/access-token
 
 将程序与 [config.json](https://raw.githubusercontent.com/TnZzZHlp/pkomga/refs/heads/main/config.example.json) 放在同一目录下
+
+```
+komga_address: komga地址
+komga_username: komga用户名
+komga_password: komga密码
+libraries: 所需要挂削数据的库的名称 例子： ["Comic", "Novel"]
+bgm_key: bgm API密钥
+```
 
 完善 config.json 后直接运行程序即可
 
