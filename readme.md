@@ -5,7 +5,7 @@
 
 Bgm Token 申请 https://next.bgm.tv/demo/access-token
 
-将程序与 config.json 放在同一目录下
+将程序与 [config.json](https://raw.githubusercontent.com/TnZzZHlp/pkomga/refs/heads/main/config.example.json) 放在同一目录下
 
 完善 config.json 后直接运行程序即可
 
