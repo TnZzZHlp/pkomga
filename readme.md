@@ -13,7 +13,7 @@ Bgm Token 申请 https://next.bgm.tv/demo/access-token
 komga_address: komga地址
 komga_username: komga用户名
 komga_password: komga密码
-libraries: 所需要挂削数据的库的名称 例子： ["Comic", "Novel"]
+libraries: 所需要挂削数据的库的名称，留空则挂削所有库 例子： ["Comic", "Novel"]
 bgm_key: bgm API密钥
 ```
 
