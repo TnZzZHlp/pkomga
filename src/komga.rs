@@ -67,7 +67,7 @@ impl Metadata {
 impl Komga {
     pub fn new(config: &Config) -> Komga {
         Komga {
-            url: config.komga_url.clone(),
+            url: config.komga_address.clone(),
             user: config.komga_username.clone(),
             password: config.komga_password.clone(),
             client: reqwest::Client::new(),
@@ -76,7 +76,7 @@ impl Komga {
 
     pub async fn get_all_libraries(&self) -> Vec<Libraries> {
         self.client
-            .get(&format!("{}/api/v1/libraries?size=100000", self.url))
+            .get(format!("{}/api/v1/libraries?size=100000", self.url))
             .basic_auth(&self.user, Some(&self.password))
             .send()
             .await
@@ -92,7 +92,7 @@ impl Komga {
             content: Vec<Series>,
         }
         self.client
-            .get(&format!("{}/api/v1/series?size=100000", self.url))
+            .get(format!("{}/api/v1/series?size=100000", self.url))
             .basic_auth(&self.user, Some(&self.password))
             .send()
             .await
@@ -112,8 +112,9 @@ impl Komga {
         let mut series: Vec<Series> = Vec::new();
         for library_id in library_ids {
             series.append(
-                &mut self.client
-                    .get(&format!(
+                &mut self
+                    .client
+                    .get(format!(
                         "{}/api/v1/series?library_id={}&size=100000",
                         self.url, library_id
                     ))
@@ -137,8 +138,9 @@ impl Komga {
         }
 
         // 判断是否已经存在Bangumi链接
-        match self.client
-            .get(&format!("{}/api/v1/series/{}", self.url, series_id))
+        match self
+            .client
+            .get(format!("{}/api/v1/series/{}", self.url, series_id))
             .basic_auth(&self.user, Some(&self.password))
             .send()
             .await
@@ -162,10 +164,7 @@ impl Komga {
         };
 
         self.client
-            .patch(&format!(
-                "{}/api/v1/series/{}/metadata",
-                self.url, series_id
-            ))
+            .patch(format!("{}/api/v1/series/{}/metadata", self.url, series_id))
             .basic_auth(&self.user, Some(&self.password))
             .json(&json!({
                 "links": [
@@ -182,7 +181,7 @@ impl Komga {
 
     pub async fn update_metadata(&self, id: &str, metadata: Metadata) {
         self.client
-            .patch(&format!("{}/api/v1/series/{}/metadata", self.url, id))
+            .patch(format!("{}/api/v1/series/{}/metadata", self.url, id))
             .basic_auth(&self.user, Some(&self.password))
             .json(&metadata)
             .send()
@@ -197,30 +196,27 @@ impl Komga {
         }
 
         // 判断是否已经存在封面
-        match self.client
-            .get(&format!("{}/api/v1/series/{}/thumbnails", self.url, id))
+        if let Ok(res) = self
+            .client
+            .get(format!("{}/api/v1/series/{}/thumbnails", self.url, id))
             .basic_auth(&self.user, Some(&self.password))
             .send()
             .await
         {
-            Ok(res) => match res.json::<Vec<Img>>().await {
-                Ok(imgs) => {
-                    // 删除原有封面
-                    for img in imgs {
-                        self.client
-                            .delete(&format!(
-                                "{}/api/v1/series/{}/thumbnails/{}",
-                                self.url, id, img.id
-                            ))
-                            .basic_auth(&self.user, Some(&self.password))
-                            .send()
-                            .await
-                            .expect("Failed to delete cover");
-                    }
+            if let Ok(imgs) = res.json::<Vec<Img>>().await {
+                // 删除原有封面
+                for img in imgs {
+                    self.client
+                        .delete(format!(
+                            "{}/api/v1/series/{}/thumbnails/{}",
+                            self.url, id, img.id
+                        ))
+                        .basic_auth(&self.user, Some(&self.password))
+                        .send()
+                        .await
+                        .expect("Failed to delete cover");
                 }
-                Err(_) => {}
-            },
-            Err(_) => {}
+            }
         }
 
         // 下载图片
@@ -254,7 +250,7 @@ impl Komga {
 
         // 上传图片
         self.client
-            .post(&format!("{}/api/v1/series/{}/thumbnails", self.url, id))
+            .post(format!("{}/api/v1/series/{}/thumbnails", self.url, id))
             .basic_auth(&self.user, Some(&self.password))
             .multipart(form)
             .send()

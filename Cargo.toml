@@ -1,14 +1,20 @@
 [package]
+edition = "2021"
 name = "pkomga"
 version = "1.0.2"
-edition = "2021"
 
 [dependencies]
-tokio = { version = "1.43.1", features = ["full"] }
-reqwest = { version = "0.12.7", features = ["json", "multipart"] }
-serde = { version = "1.0.209", features = ["derive"] }
-serde_json = { version = "1.0.127" }
-indicatif = { version = "0.17.8" }
-lazy_static = { version = "1.5.0" }
-tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+indicatif = {version = "0.17.11"}
+lazy_static = {version = "1.5.0"}
+
+# reqwest 需要启用 native-tls-alpn 特性，否则Cloudflare会报错
+# this website is using a security service to protect itself from online attacks. The action you just performed triggered the security solution. There are several actions that could trigger this block including submitting a certain word or phrase, a SQL command or malformed data.
+# 参考 https://github.com/seanmonstar/reqwest/issues/2648
+# 参考 https://github.com/seanmonstar/reqwest/issues/1825
+# 参考 https://github.com/seanmonstar/reqwest/discussions/2337
+# 参考 https://github.com/seanmonstar/reqwest/discussions/2227
+reqwest = {version = "0.12.15", features = ["json", "multipart", "native-tls-alpn"]}
+
+serde = {version = "1.0.219", features = ["derive"]}
+serde_json = {version = "1.0.140"}
+tokio = {version = "1.44.2", features = ["full"]}

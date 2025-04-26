@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    pub komga_url: String,
+    pub komga_address: String,
     pub komga_username: String,
     pub komga_password: String,
     pub libraries: Vec<String>,
@@ -19,7 +19,7 @@ impl Config {
             }
         };
 
-        match serde_json::from_str::<Config>(&config){
+        match serde_json::from_str::<Config>(&config) {
             Ok(config) => config,
             Err(e) => {
                 println!("{}", e);

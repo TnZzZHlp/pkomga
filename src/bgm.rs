@@ -1,11 +1,8 @@
-use serde::{Deserialize, Serialize};
-use tracing::debug;
-use tracing::error;
-
 use crate::{
     config::Config,
     komga::{AlternateTitle, Metadata},
 };
+use serde::{Deserialize, Serialize};
 
 pub struct Bgm {
     api_key: String,
@@ -76,70 +73,65 @@ impl Bgm {
                 name
             ))
             .header("Authorization", "Bearer ".to_owned() + &self.api_key)
-            .header("User-Agent", "TnZzZHlp/rkomga")
-            .send()
-            .await
-        {
-            Ok(res) => res,
-            Err(e) => {
-                return Err(());
-            }
-        };
-
-        let res: Res = match res.json().await {
-            Ok(res) => res,
-            Err(e) => {
-                return Err(());
-            }
-        };
-
-        Ok(res.list[0].id.to_string())
-    }
-
-    pub async fn get_subject(&self, id: &str) -> Result<(Metadata, String), ()> {
-        debug!(
-            "条目url: {}",
-            &format!("https://api.bgm.tv/v0/subjects/{}", id)
-        );
-        let res = match self
-            .client
-            .get(&format!("https://api.bgm.tv/v0/subjects/{}", id))
-            .header("Authorization", "Bearer ".to_owned() + &self.api_key)
             .header(
                 "User-Agent",
-                "TnZzZHlp/pkomga/1.0.1 (https://github.com/TnZzZHlp/pkomga)",
+                "TnZzZHlp/pkomga (https://github.com/TnZzZHlp/pkomga)",
             )
             .send()
             .await
         {
             Ok(res) => res,
+            Err(_) => return Err(()),
+        };
+
+        let res: Res = match res.json().await {
+            Ok(res) => res,
+            Err(_) => return Err(()),
+        };
+
+        Ok(res.list[0].id.to_string())
+    }
+
+    pub async fn get_subject(&self, id: &str) -> Result<(Metadata, String), String> {
+        let res = match self
+            .client
+            .get(format!("https://api.bgm.tv/v0/subjects/{}", id))
+            .header("Authorization", format!("Bearer {}", self.api_key))
+            .header(
+                "User-Agent",
+                "TnZzZHlp/pkomga (https://github.com/TnZzZHlp/pkomga)",
+            )
+            .header("Accept", "application/json")
+            .send()
+            .await
+        {
+            Ok(res) => res,
             Err(e) => {
-                error!("Failed to get subject: {}", e);
-                return Err(());
+                return Err(e.to_string());
             }
         };
 
-        let res = res.text().await;
-        debug!("{:?}", res);
-        let res = serde_json::from_str::<Subject>(&res.unwrap());
+        let res = res.text().await.unwrap();
 
-        match res {
-            Ok(res) => {
+        let json = serde_json::from_str::<Subject>(&res);
+
+        match json {
+            Ok(json) => {
                 let mut metadata = Metadata::new();
 
                 // 判断是否完结
-                if res.infobox.iter().any(|i| i.key == "结束") {
+                if json.infobox.iter().any(|i| i.key == "结束") {
                     metadata.status = "ENDED".to_owned();
                 }
 
                 // 判断总结
-                if res.summary != "" {
-                    metadata.summary = res.summary;
+                if !json.summary.is_empty() {
+                    metadata.summary = json.summary;
                 }
 
                 // 判断出版社
-                if res.infobox.iter().any(|i| i.key == "出版社") {
-                    metadata.publisher = match res.infobox.iter().find(|i| i.key == "出版社") {
+                if json.infobox.iter().any(|i| i.key == "出版社") {
+                    metadata.publisher = match json.infobox.iter().find(|i| i.key == "出版社") {
                         Some(i) => match i.value.clone() {
                             ValueUnion::String(s) => s,
                             _ => "".to_owned(),
@@ -149,12 +141,12 @@ impl Bgm {
                 }
 
                 // 判断标签
-                metadata.tags = res.tags.iter().map(|t| t.name.clone()).collect();
+                metadata.tags = json.tags.iter().map(|t| t.name.clone()).collect();
                 metadata.tags.push("已挂削".to_owned());
 
                 // 写入副标题
                 let mut alternate_titles: Vec<AlternateTitle> = Vec::new();
-                for info in res.infobox.iter() {
+                for info in json.infobox.iter() {
                     alternate_titles.push(AlternateTitle {
                         label: info.key.clone(),
                         title: match info.value.clone() {
@@ -169,12 +161,9 @@ impl Bgm {
                 }
                 metadata.alternate_titles = alternate_titles;
 
-                Ok((metadata, res.images.large))
+                Ok((metadata, json.images.large))
             }
-            Err(e) => {
-                error!("Failed to parse subject: {}", e);
-                Err(())
-            }
+            Err(_) => Err(res),
         }
     }
 }

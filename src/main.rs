@@ -8,11 +8,8 @@ use komga::Komga;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use lazy_static::lazy_static;
-use serde::de;
-use std::{env, fmt, sync::Arc, time::Duration};
+use std::{fmt, sync::Arc, time::Duration};
 use tokio::task::JoinSet;
-use tracing::{debug, Level};
-use tracing_subscriber::FmtSubscriber;
 
 lazy_static! {
     static ref STY: ProgressStyle = ProgressStyle::with_template(
@@ -27,16 +24,6 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
-    // 初始化日志
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(if env::args().any(|f| f == "-v") {
-            Level::DEBUG
-        } else {
-            Level::ERROR
-        })
-        .finish();
-    tracing::subscriber::set_global_default(subscriber).expect("初始化日志失败");
-
     // 解析配置
     let config = Config::parse();
 
@@ -50,14 +37,14 @@ async fn main() {
     let pb = Arc::new(MultiProgress::new());
 
     insert_bgm(&config, komga.clone(), bgm.clone(), pb.clone()).await;
-    parse_metadata(&config, komga, bgm, pb.clone()).await;
+    parse_metadata(&config, komga, bgm, pb).await;
 }
 
 async fn insert_bgm(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: Arc<MultiProgress>) {
-    // Get all libraries
+    // 获取komga所有库
     let libraries = komga.get_all_libraries().await;
 
-    // Get all series
+    // 获取所有系列
     let series = if config.libraries.is_empty() {
         komga.get_all_series().await
     } else {
@@ -69,13 +56,12 @@ async fn insert_bgm(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: Arc<M
         komga.get_series_by_library(library_ids).await
     };
 
-    // Progress bar
+    // 新增进度条
     let insert_pb = pb.add(ProgressBar::new(series.len() as u64));
     insert_pb.set_style(STY.clone());
     insert_pb.set_message("Inserting Bangumi Url");
     insert_pb.enable_steady_tick(Duration::from_millis(100));
 
-    //  Insert Bgmid into series
     let mut tasks = JoinSet::new();
 
     let limit = Arc::new(tokio::sync::Semaphore::new(2));
@@ -133,6 +119,7 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
         komga.get_series_by_library(library_ids).await
     };
 
+    // 新增进度条
     let metadata_pb = pb.add(ProgressBar::new(series.len() as u64));
     metadata_pb.set_style(STY.clone());
     metadata_pb.set_message("Parsing Metadata");
@@ -178,7 +165,7 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
         tasks.spawn(async move {
             let _permit = limit.acquire().await.unwrap();
 
-            info_pb.set_message(format!("{}", s.name));
+            info_pb.set_message(format!("刮削 {} 中", s.name));
             info_pb.enable_steady_tick(Duration::from_millis(100));
 
             // 通过Bangumi链接获取Bangumi ID
@@ -193,28 +180,25 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
                 Some(link) => match link.url.split("/").last() {
                     Some(id) => id.to_string(),
                     None => {
-                        debug!("url格式错误 : {}", link.url);
-                        info_pb.finish_and_clear();
+                        info_pb.finish_with_message("Bangumi Url格式错误");
                         metadata_pb.inc(1);
                         return;
                     }
                 },
                 None => {
-                    debug!("未找到Bangumi链接");
-                    info_pb.finish_and_clear();
+                    info_pb.finish_with_message("未找到Bangumi链接");
                     metadata_pb.inc(1);
                     return;
                 }
             };
 
-            let (metadata, img) = match bgm.get_subject(&bgmid).await {
+            let (metadata, img) = match bgm.get_subject(bgmid.trim()).await {
                 Ok((mut metadata, img)) => {
                     metadata.links.extend(links);
                     (metadata, img)
                 }
-                Err(_) => {
-                    debug!("获取Bangumi信息失败");
-                    info_pb.finish_and_clear();
+                Err(e) => {
+                    info_pb.finish_with_message(format!("获取Bangumi信息失败: {}", e));
                     metadata_pb.inc(1);
                     return;
                 }
@@ -223,11 +207,11 @@ async fn parse_metadata(config: &Config, komga: Arc<Komga>, bgm: Arc<Bgm>, pb: A
             // 更新元数据
             komga.update_metadata(&s.id, metadata).await;
             komga.update_cover(&s.id, img).await;
-            info_pb.finish_and_clear();
+            info_pb.finish_with_message(format!("{} 刮削完成", s.name));
             metadata_pb.inc(1);
         });
     }
 
     tasks.join_all().await;
-    metadata_pb.finish_with_message("Parse Metadata Done");
+    metadata_pb.finish_with_message("刮削完成");
 }
